@@ -1,0 +1,337 @@
+use namespace canvas;
+use namespace math;
+
+var blue = 2;
+var red = 1;
+var w = width();
+var h = height();
+var winner = "";
+
+
+function whoWon(color)
+{
+	if color==red then 
+	{
+		winner = "Red wins";
+		return;
+	}
+	else 
+	{
+		winner = "Blue wins";
+		return;
+	}
+	
+}
+
+
+class Gamemap
+{
+	private:
+		var horizontal_areas;
+		var vertical_areas;
+		var GameVector = [];
+		var ascendingVector = [];
+		var descendingVector = [];
+		var temp = 1;
+	public:	
+		constructor (ha, va) {
+			horizontal_areas = ha;
+			vertical_areas = va;
+			GameVector = assignVector();
+			assert(horizontal_areas>3 and horizontal_areas<10,"Spalten können maximal 9 und minimal 3 betragen");
+			assert(vertical_areas>3 and vertical_areas<10, "Zeilen können maximal 9 und minimal 3 betragen");
+		}
+		
+		function get_ha()
+		{
+			return horizontal_areas;
+		}
+		
+		function get_va()
+		{
+			return vertical_areas;
+		}
+		function assignVector()
+		{
+			var SubVector = [];
+			var Vector= [];
+			for 0:vertical_areas do
+			{
+				SubVector= [];
+				for 0:horizontal_areas do
+				{
+					SubVector.push(0);
+				}
+				Vector.push(SubVector);
+			}
+			return Vector;
+		}
+		
+		function get_GameVector()
+		{
+			return GameVector;
+		}
+		
+		function play(spalte)
+		{
+			for var i in 0:GameVector.size() do
+			{
+				if GameVector[GameVector.size()-i-1][spalte]==0 then 
+				{
+					set_GameVector(GameVector.size()-i-1, spalte);
+					break;
+				}
+			}
+		}
+		
+		function set_GameVector(zeile, spalte)
+		{
+			if GameVector[zeile][spalte] == 0 then
+			{
+				if temp == red then
+				{
+					GameVector[zeile][spalte] = blue;
+					temp = blue;
+				}
+				else
+				{
+					GameVector[zeile][spalte] = red;
+					temp = red;
+				}
+			}
+		}
+		
+		
+		function assendVector()
+		{
+			var t = [];
+			
+			for var i in 0:(horizontal_areas+vertical_areas)-1 do
+			{
+				t.push([]);
+			}
+	
+			
+			for var i in 0:GameVector.size() do
+			{
+				for var s in 0:GameVector[i].size() do 
+				{
+					t[s+i].push(GameVector[i][s]);
+				}
+			}
+			
+			ascendingVector = t;
+			
+		}
+		
+		function descendVector()
+		{
+			var temporal = [];
+			var t = [];
+			
+			for var i in 0:GameVector.size() do temporal.push(GameVector[GameVector.size()-1-i]); #Matrix umkehrung 
+			
+			for var i in 0:(horizontal_areas+vertical_areas)-1 do
+			{
+				t.push([]);
+			}
+	
+			
+			for var i in 0:temporal.size() do
+			{
+				for var s in 0:temporal[i].size() do 
+				{
+					t[s+i].push(temporal[i][s]);
+				}
+			}
+			
+			descendingVector = t;
+			
+		}
+		
+		
+		function get_AscendingVector()
+		{
+			return ascendingVector;
+		}
+		
+				function get_DescendingVector()
+		{
+			return descendingVector;
+		}
+		
+		function representiereSplaten()
+		{
+			setFont("helvetica", w/horizontal_areas^2);
+			for var i in 1:horizontal_areas+1 do
+			{
+				text((w/horizontal_areas)*(i-1),h-(h/(vertical_areas*2)),i);
+			}
+		}
+		
+		
+		
+}
+
+function Representation(g_map) # recieves an gamemap object
+{
+	assert(Type(g_map)==Gamemap);
+	for var i in 0:g_map.get_GameVector().size() do #0:7 vertically
+	{
+		for var s in 0:g_map.get_GameVector()[i].size() do
+		{
+			var value = g_map.get_GameVector()[i][s];
+			if value == 0 then
+			{
+				setFillColor(0.9 , 0.9 , 0.9);
+				fillCircle((w/g_map.get_ha()) * s + (w/g_map.get_ha())/2 , (h/ g_map.get_va()) * i + (h/g_map.get_va())/2  ,min(h/g_map.get_va()/3, w/g_map.get_ha()/3));
+			}
+			else if value == red then 
+			{
+				setFillColor(1 , 0 , 0);
+				fillCircle((w/g_map.get_ha()) * s + (w/g_map.get_ha())/2 , (h/ g_map.get_va()) * i + (h/g_map.get_va())/2  ,min(h/g_map.get_va()/3, w/g_map.get_ha()/3));
+			}
+			else #yellow
+			{
+				setFillColor(0 , 0 , 1);
+				fillCircle((w/g_map.get_ha()) * s + (w/g_map.get_ha())/2 , (h/ g_map.get_va()) * i + (h/g_map.get_va())/2  ,min(h/g_map.get_va()/3, w/g_map.get_ha()/3));
+			}
+		}
+	}
+	setFillColor(1,1,1);
+	g_map.representiereSplaten();
+}
+
+function checkPlayable(g_map)
+{
+	assert(Type(g_map)==Gamemap);
+	for var i in 0:g_map.get_GameVector().size() do #0:7 vertically
+	{
+		for var s in 0:g_map.get_GameVector()[i].size() do
+		{
+			if g_map.get_GameVector()[i][s]==0 then return true;
+		}
+	}
+	return false;
+}
+
+function checkWinner(g_map)
+{
+	assert(Type(g_map)==Gamemap);
+	#horizontal check:
+	for var i in 0:g_map.get_GameVector().size() do #0:7 vertically
+	{
+		for var s in 0:g_map.get_GameVector()[i].size() do
+		{
+			var value = g_map.get_GameVector()[i];
+			#horizontal check:
+			if s < g_map.get_GameVector()[i].size()-3 then
+				if value[s] == value[s+1] and value[s+2] == value[s+1] and value[s+2] == value[s+3] then
+				{
+					if value[s] == red then
+					{
+						whoWon(red);
+					}
+					else if value[s] == blue then 
+					{
+						whoWon(blue);
+				    }
+				}
+			#vertically check:
+			if i < g_map.get_GameVector().size()-3 then
+			{
+				value = g_map.get_GameVector();
+				if value[i][s] == value[i+1][s] and value[i+1][s] == value[i+2][s] and value[i+2][s] == value[i+3][s] then
+				{
+					if value[i][s] == red then whoWon(red);
+					else if value[i][s] == blue then whoWon(blue);
+				}
+			}
+		}
+	}
+	# diagonally raising check:
+	g_map.assendVector();
+	for var i in 0:g_map.get_AscendingVector().size() do 
+	{
+		for var s in 0:g_map.get_AscendingVector()[i].size() do
+		{
+			if g_map.get_AscendingVector()[i].size() >=3 then 
+			{
+				if s< g_map.get_AscendingVector()[i].size()-3 then
+				{
+					var value = g_map.get_AscendingVector()[i];
+					if value[s] == value[s+1] and value[s+2] == value[s+1] and value[s+2] == value[s+3] then
+					{
+						if value[s] == red then whoWon(red);
+						else if value[s] == blue then whoWon(blue);
+					}
+				}
+			}
+		}
+	}
+	#diagonally decending check:
+	g_map.descendVector();
+		for var i in 0:g_map.get_DescendingVector().size() do 
+	{
+		for var s in 0:g_map.get_DescendingVector()[i].size() do
+		{
+			if g_map.get_DescendingVector()[i].size() >=3 then 
+			{
+				if s< g_map.get_DescendingVector()[i].size()-3 then
+				{
+					var value = g_map.get_DescendingVector()[i];
+					if value[s] == value[s+1] and value[s+2] == value[s+1] and value[s+2] == value[s+3] then
+					{
+						if value[s] == red then whoWon(red);
+						else if value[s] == blue then whoWon(blue);
+					}
+				}
+			}
+		}
+	}
+	
+}
+
+
+
+
+
+
+
+var x = Gamemap(7, 7);
+
+function PrintWinner(W)
+{
+	setTextAlign("center");
+	setFont("helvetica", min(w/6,h/6));
+	setFillColor(0,0,0);
+	clear();
+	if winner=="Red wins" then setFillColor(1,0,0);
+	else setFillColor(0,0,1);
+	text(w/2 ,h/2 , W);
+}
+
+Representation(x);
+setEventHandler("canvas.keydown", function(event){
+	for var i in 0:x.get_ha()+1 do
+	{
+		if event.key == String(i) then x.play(Integer(event.key)-1);
+		Representation(x);
+		checkWinner(x);
+		if winner!="" then {PrintWinner(winner); quitEventMode();}
+		if checkPlayable(x)==false then
+		{
+			alert("No places left");
+			quitEventMode();
+		}
+	}
+});
+
+enterEventMode();
+
+
+
+
+
+
+
